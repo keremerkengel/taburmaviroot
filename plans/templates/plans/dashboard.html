@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm mb-4 border-0 welcome-card">
+  <div class="card-body py-3">
+    <h5 class="mb-0">
+      👋 Hoş geldiniz, <strong>{{ user.first_name|default:user.username }}</strong>!
+    </h5>
+    <small class="text-muted">
+      Bugün {{ now|date:"d F Y" }} — harika bir gün planlamak için ideal!
+    </small>
+  </div>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card text-center shadow-sm border-0 stat-card">
+      <div class="card-body">
+        <h6 class="text-muted mb-1">Bu Ayki Ziyaret</h6>
+        <h3 class="fw-bold text-primary">{{ total_visits }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center shadow-sm border-0 stat-card">
+      <div class="card-body">
+        <h6 class="text-muted mb-1">Ziyaret Edilen Şehir</h6>
+        <h3 class="fw-bold text-primary">{{ distinct_cities }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center shadow-sm border-0 stat-card">
+      <div class="card-body">
+        <h6 class="text-muted mb-1">Son Ziyaret</h6>
+        {% if last_visit %}
+          <h6 class="mb-0">{{ last_visit.place_name }}</h6>
+          <small class="text-muted">{{ last_visit.visit_date|date:"d.m.Y" }}</small>
+        {% else %}
+          <small class="text-muted">Henüz ziyaret yok</small>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h4 mb-0"> Ziyaret Kayıtlarım</h1>
+  <div class="d-flex gap-2">
+    <a class="btn btn-primary" href="{% url 'export_excel' %}">
+      Excel İndir
+    </a>
+    <a class="btn btn-primary" href="{% url 'plan_create' %}">
+      Ziyaret Ekle
+    </a>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Tarih</th>
+          <th>İl</th>
+          <th>İlçe</th>
+          <th>Ziyaret Türü</th>
+          <th>Yer Adı</th>
+          <th>Ziyaret Amacı</th>
+          <th>Notlar</th>
+          <th class="text-end">İşlemler</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in plans %}
+          <tr>
+            <td>{{ p.visit_date|date:"d.m.Y" }}</td>
+            <td>{{ p.city }}</td>
+            <td>{{ p.district }}</td>
+            <td>
+              {% if p.place_type == 'klinik' %}Klinik{% elif p.place_type == 'eczane' %}Eczane{% elif p.place_type == 'ciftlik' %}Çiftlik{% else %}Diğer{% endif %}
+            </td>
+            <td>{{ p.place_name }}</td>
+            <td>{{ p.visit_purpose }}</td>
+            <td class="text-truncate" style="max-width: 260px;">{{ p.notes }}</td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'plan_edit' p.pk %}">Düzenle</a>
+              <a class="btn btn-sm btn-outline-danger" href="{% url 'plan_delete' p.pk %}">Sil</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="8" class="text-center py-4 text-muted">Henüz ziyaret kaydınız yok. Başlamak için “Ziyaret Ekle”ye tıklayın.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

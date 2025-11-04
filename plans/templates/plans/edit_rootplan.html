@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h4 mb-3">Ziyareti Düzenle</h1>
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <!-- aynı form alanları -->
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">İl</label>
+          {{ form.city }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">İlçe</label>
+          {{ form.district }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Ziyaret Türü</label>
+          {{ form.place_type }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Yer Adı</label>
+          {{ form.place_name }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Ziyaret Amacı</label>
+          {{ form.visit_purpose }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Tarih</label>
+          {{ form.visit_date }}
+        </div>
+        <div class="col-12">
+          <label class="form-label">Notlar</label>
+          {{ form.notes }}
+        </div>
+      </div>
+      <div class="d-flex gap-2 mt-4">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Vazgeç</a>
+        <button class="btn btn-primary">Kaydet</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
