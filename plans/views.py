@@ -1,4 +1,4 @@
-from django.contrib import messages
+from django.contrib import messages 
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
@@ -9,11 +9,10 @@ from django.views.generic import CreateView, UpdateView, DeleteView
 from django.utils import timezone
 from django.db.models import Count
 from django.contrib.auth import logout
-from django.shortcuts import redirect
 from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
+from django.contrib.auth.models import User  # ✅ admin oluşturmak için eklendi
 
 from .forms import RootPlanForm
 from .models import RootPlan
@@ -34,10 +33,12 @@ def signup_view(request):
         form = UserCreationForm()
     return render(request, "registration/signup.html", {"form": form})
 
+
 class OwnerRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         obj = self.get_object()
         return obj.user == self.request.user
+
 
 class RootPlanCreateView(LoginRequiredMixin, CreateView):
     model = RootPlan
@@ -50,6 +51,7 @@ class RootPlanCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, "✅ Ziyaret başarıyla eklendi.")
         return super().form_valid(form)
 
+
 class RootPlanUpdateView(LoginRequiredMixin, OwnerRequiredMixin, UpdateView):
     model = RootPlan
     form_class = RootPlanForm
@@ -60,6 +62,7 @@ class RootPlanUpdateView(LoginRequiredMixin, OwnerRequiredMixin, UpdateView):
         messages.success(self.request, "✏️ Ziyaret başarıyla güncellendi.")
         return super().form_valid(form)
 
+
 class RootPlanDeleteView(LoginRequiredMixin, OwnerRequiredMixin, DeleteView):
     model = RootPlan
     template_name = "plans/confirm_delete.html"
@@ -69,23 +72,18 @@ class RootPlanDeleteView(LoginRequiredMixin, OwnerRequiredMixin, DeleteView):
         messages.error(self.request, "❌ Ziyaret kaydı silindi.")
         return super().delete(request, *args, **kwargs)
 
+
 @login_required
 def dashboard(request):
     plans = RootPlan.objects.filter(user=request.user)
 
-    # Zaman bilgisi
     now = timezone.now()
     current_month = now.month
     current_year = now.year
 
-    # Bu ayın ziyaretleri
     monthly_visits = plans.filter(visit_date__year=current_year, visit_date__month=current_month)
     total_visits = monthly_visits.count()
-
-    # Şehir sayısı (farklı iller)
     distinct_cities = monthly_visits.values("city").distinct().count()
-
-    # En son ziyaret
     last_visit = plans.order_by("-visit_date").first()
 
     context = {
@@ -97,36 +95,32 @@ def dashboard(request):
     }
     return render(request, "plans/dashboard.html", context)
 
+
 def logout_view(request):
     logout(request)
     return redirect('login')
 
+
 @login_required
 def export_visits_excel(request):
-    # Workbook oluştur
     wb = Workbook()
     ws = wb.active
     ws.title = "Ziyaret Kayıtları"
-    
-    # Başlık satırı
+
     headers = ['Tarih', 'İl', 'İlçe', 'Ziyaret Türü', 'Yer Adı', 'Ziyaret Amacı', 'Notlar']
-    
-    # Başlık stilini ayarla
+
     header_font = Font(bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
     header_alignment = Alignment(horizontal="center")
-    
-    # Başlıkları yaz ve stillendir
+
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
         cell.font = header_font
         cell.fill = header_fill
         cell.alignment = header_alignment
-    
-    # Kullanıcının ziyaret kayıtlarını al
+
     visits = RootPlan.objects.filter(user=request.user).order_by('-visit_date')
-    
-    # Ziyaret türü çevirileri
+
     place_type_choices = {
         'klinik': 'Klinik',
         'eczane': 'Eczane', 
@@ -134,8 +128,7 @@ def export_visits_excel(request):
         'hastane': 'Hastane',
         'diger': 'Diğer'
     }
-    
-    # Ziyaret amacı çevirileri  
+
     visit_purpose_choices = {
         'ilac_tanitim': 'İlaç Tanıtım',
         'tahsil': 'Tahsil',
@@ -156,15 +149,11 @@ def export_visits_excel(request):
         'toplanti': 'Toplantı',
         'diger': 'Diğer'
     }
-    
-    # Verileri yaz
+
     for row, visit in enumerate(visits, 2):
-        # Ziyaret türünü çevir
         place_type_display = place_type_choices.get(visit.place_type, visit.place_type)
-        
-        # Ziyaret amacını çevir
         visit_purpose_display = visit_purpose_choices.get(visit.visit_purpose, visit.visit_purpose)
-        
+
         row_data = [
             visit.visit_date.strftime('%d.%m.%Y'),
             visit.city,
@@ -174,20 +163,27 @@ def export_visits_excel(request):
             visit_purpose_display,
             visit.notes or ''
         ]
-        
+
         for col, value in enumerate(row_data, 1):
             ws.cell(row=row, column=col, value=value)
-    
-    # Sütun genişliklerini ayarla
+
     column_widths = [12, 15, 15, 15, 25, 20, 30]
     for col, width in enumerate(column_widths, 1):
         ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = width
-    
-    # Response oluştur
+
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     response['Content-Disposition'] = 'attachment; filename="ziyaret_kayitlari.xlsx"'
-    
+
     wb.save(response)
     return response
+
+
+# ✅ Geçici admin oluşturucu
+def create_admin(request):
+    if not User.objects.filter(username="admin").exists():
+        User.objects.create_superuser("admin", "admin@taburmavi.com", "1234")
+        return HttpResponse("Admin kullanıcı oluşturuldu: admin / 1234")
+    else:
+        return HttpResponse("Admin zaten mevcut.")
