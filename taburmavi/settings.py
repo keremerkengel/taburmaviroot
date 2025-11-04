@@ -1,19 +1,14 @@
 from pathlib import Path
-import os
 import dj_database_url
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-prod")
-DEBUG = os.getenv("DEBUG", "True") == "True"
+SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-prod")
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-# Render domainini ve yerel geliştirme adreslerini izinli hale getir
-ALLOWED_HOSTS = os.getenv(
-    "ALLOWED_HOSTS",
-    "taburmaviroot.onrender.com,127.0.0.1,localhost"
-).split(",")
+ALLOWED_HOSTS = ["taburmaviroot.onrender.com", "localhost", "127.0.0.1"]
 
-# Uygulamalar
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -28,7 +23,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # Render için gerekli
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -58,11 +53,11 @@ TEMPLATES = [
 WSGI_APPLICATION = "taburmavi.wsgi.application"
 ASGI_APPLICATION = "taburmavi.asgi.application"
 
-# Veritabanı yapılandırması: Render PostgreSQL kullanır, yerelde SQLite
+# ✅ Production friendly database setup
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600
+        conn_max_age=600,
     )
 }
 
@@ -78,7 +73,6 @@ TIME_ZONE = "Europe/Istanbul"
 USE_I18N = True
 USE_TZ = True
 
-# Statik dosyalar
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "plans" / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
@@ -86,7 +80,6 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Giriş yönlendirmeleri
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/panel/"
 LOGOUT_REDIRECT_URL = "/accounts/login/"
